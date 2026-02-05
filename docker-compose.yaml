@@ -1,0 +1,61 @@
+services:
+  px4_ros2_allinone:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PX4_TAG: v1.16.1
+    container_name: px4_ros2
+    network_mode: bridge
+    restart: unless-stopped
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_QPA_PLATFORM=xcb
+      - FCU_URL=udp://:14540@127.0.0.1:14540
+      - ROS_DOMAIN_ID=0
+      - PX4_SIM_MODEL=gz_x500
+      - LIBVA_DRIVER_NAME=
+    ports:
+      - "9090:9090"
+      - "14540:14540/udp"
+    volumes:
+      - ./ws:/ws
+      - ./embedded-mas:/root/embedded-mas
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/.Xauthority:/root/.Xauthority:ro
+    devices:
+      - /dev/dri:/dev/dri
+    working_dir: /opt/PX4-Autopilot
+    command: >
+      bash -lc "
+        set -eo pipefail;
+        source /opt/ros/humble/setup.bash;
+        
+        echo '============================================';
+        echo 'Container started successfully!';
+        echo '============================================';
+        echo '';
+        echo 'Starting background services:';
+        echo '  [1/2] rosbridge - Port 9090';
+        
+        ros2 launch rosbridge_server rosbridge_websocket_launch.xml &
+        sleep 3;
+        
+        echo '  [2/2] MAVROS - Waiting for PX4 connection';
+        
+        ros2 launch mavros px4.launch fcu_url:=udp://:14540@127.0.0.1:14540 &
+        sleep 3;
+        
+        echo '';
+        echo '============================================';
+        echo 'Ready! To start PX4 simulation, run:';
+        echo '  docker exec -it px4_ros2 bash';
+        echo '  make px4_sitl gz_x500';
+        echo '';
+        echo 'Or use the alias: startpx4';
+        echo '';
+        echo 'Safety checks are DISABLED for development.';
+        echo '============================================';
+        
+        tail -f /dev/null;
+      "

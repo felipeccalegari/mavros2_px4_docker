@@ -1,0 +1,84 @@
+# The root item of the EmbeddedAgent configuration is the Device.
+# An embedded agent can be composed of one to many devices. A device is any external element (physical or virtual) which sensors and actuators are connected to.
+# In this example, the agent is composed of a single device, that is a ROS core identified as "sample_roscore".
+- device_id: sample_roscore #device identifier. It is up to the designer to choose this name.
+  #className: the class that implements the interface between the parception/action systems and the device.
+  #           This class provides means to convert (i) sensor values in perceptions and (ii) action of the agents and actuations performed by the physical actuators.
+  #           Different interfaces can be implemented for different types of devices.
+  className:  embedded.mas.bridges.ros.RosMaster
+  # A device contains a microcontroller, that is an interface that provides access to external devices to get percepts and perform actuations
+  # Different microcontrollers have different parameters depending on their nature. For example, serial devices like Arduino require to configure serial ports and baudrates.
+  # In this example, the microcontroller is a Java-ROS interface with parameters related to topics and services.
+  microcontroller: 
+      id: ros1 #microcontroller identifier. It is up to the designer to choose this name.
+      connectionString: ws://localhost:9090 #connection with ROS
+      #className: The class that implements the interface with the microcontroller.
+      #           This class provides means to read from and write to the microcontroller. 
+      #           Different interfaces can be implemented for different types of microcontrollers.
+      className: DefaultRos4EmbeddedMas  
+      #perceptionTopics: List of topics whose values are converted into perceptions.
+      #                  Each topic requires to define its name and its type.   
+  perceptionTopics:         
+      - topicName: /mavros/State
+        topicType: mavros_msgs/msg/State
+        beliefName: state
+  #actions: An agent acts upon ROS by topic writings and service requests, configured in the items topicWritingActions and serviceRequestActions, respectively.
+  #         This example illustrate only service request actions. 
+  actions:       
+    #Each topic writing action requires to configure three parameters:
+    # 1. actionName: the name of the action performed by the agent
+    # 2. serviceName: the name of the service to be called
+    # 3. params: a list of the names of parameters required by the service
+    serviceRequestActions:
+        - actionName: arming
+          serviceName: /mavros/cmd/arming
+          params:
+            - value
+        - actionName: set_mode
+          serviceName: /mavros/set_mode
+          params:
+            - custom_mode
+        - actionName: mission_clear
+          serviceName: /mavros/mission/clear
+          #params: [ ]
+        - actionName: mission_push
+          serviceName: /mavros/mission/push
+          params:
+            - start_index
+            - waypoints:
+                - frame
+                - command
+                - is_current
+                - autocontinue
+                - param1
+                - param2
+                - param3
+                - param4
+                - x_lat
+                - y_long
+                - z_alt
+        - actionName: mission_set_current
+          serviceName: /mavros/mission/set_current
+          params:
+            - wp_seq
+    topicWritingActions:
+        - actionName: setpoint_local
+          topicName: /mavros/setpoint_position/local
+          topicType: geometry_msgs/msg/PoseStamped
+          params:
+          - header:
+            - seq
+            - stamp
+            - frame_id
+          - pose:
+            - position:
+              - x
+              - y
+              - z
+            - orientation:  
+              - x
+              - y
+              - z
+              - w
+                              
+
