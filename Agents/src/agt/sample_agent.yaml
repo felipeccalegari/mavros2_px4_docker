@@ -22,6 +22,25 @@
       - topicName: /mavros/State
         topicType: mavros_msgs/msg/State
         beliefName: state
+      - topicName: /mavros/battery
+        topicType: sensor_msgs/msg/BatteryState
+        beliefName: battery
+        ignoreValues:
+         - header
+         - voltage
+         - temperature
+         - current
+         - charge
+         - capacity
+         - design_capacity
+         - power_supply_status
+         - power_supply_health
+         - power_supply_technology
+         - present
+         - cell_voltage
+         - cell_temperature
+         - location
+         - serial_number
   #actions: An agent acts upon ROS by topic writings and service requests, configured in the items topicWritingActions and serviceRequestActions, respectively.
   #         This example illustrate only service request actions. 
   actions:       
@@ -67,8 +86,10 @@
           topicType: geometry_msgs/msg/PoseStamped
           params:
           - header:
-            - seq
-            - stamp
+            #- seq
+            - stamp:
+              - sec
+              - nanosec
             - frame_id
           - pose:
             - position:

@@ -30,7 +30,7 @@ public class CustomClass extends RosMaster{
 	
 	
 	
-	// Handling the action "mission_push", which is realized by requesting the ROS service /turtle1/teleport_relative 		
+	// Handling the action "mission_push", which is realized by requesting the ROS service 		
 	
 	if(actionName.equals("mission_push")){ // <- mission_push is the name of the internal action used in the .asl code
 	   ListTermImpl start_index = (ListTermImpl)args[0]; // 1st parameter
