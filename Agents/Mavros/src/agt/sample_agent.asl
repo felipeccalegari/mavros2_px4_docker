@@ -13,7 +13,7 @@
       .wait(1000);
       .print("Armed the drone."). */
 
-!start.
+/* !start.
 +!start <-
     // 1. Clear 
     .time(_, M, S, MS);
@@ -44,7 +44,7 @@
     .print("Starting arming at: ", M6, ":", S6, ":", MS6);
     .arming(true);
     .time(_, M7, S7, MS7);
-    .print("Finishing arming at: ", M7, ":", S7, ":", MS7).
+    .print("Finishing arming at: ", M7, ":", S7, ":", MS7). */
 
 
 /* !pub_waypoints.
@@ -113,7 +113,7 @@
 Starts at 1 and only sends the next increment after PX4 confirms
 the last published value through /mavros/param/event.
 */
-/* !demo_param_counter.
+!demo_param_counter.
 
 +!demo_param_counter <-
     -counter_step(_);
@@ -159,4 +159,4 @@ the last published value through /mavros/param/event.
         -expected_param_value(_)
       }
     }.
- */
+
