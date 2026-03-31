@@ -21,7 +21,11 @@ docker exec -it px4_ros2 bash
 make px4_sitl gz_x500
 ```
 
-*Jason Agent code in the /Agent folder
+*Jason Agent code in the /Agents/Mavros folder
 ```
+cd Agents/Mavros
+chmod +x gradlew
 ./gradlew run
 ```
+
+- The file `px4_mavlink_mavros_mapping.xlsx` has been generated to be used as reference to map most Mavros and Mavlink commands/messages available in the current system.
