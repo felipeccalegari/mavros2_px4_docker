@@ -2,13 +2,6 @@
 
 echo "$(date)"
 
-# -------------------------------------------------
-# Start application
-# -------------------------------------------------
-./gradlew -q --console=plain &
-APP_PID=$!
-sleep 5
-
 LOG_DIR="log"
 mkdir -p "$LOG_DIR"
 rm -f .stop___MAS
@@ -16,6 +9,37 @@ ros_sampler=""
 mavros_sampler=""
 jas_sampler=""
 cleanup_done=0
+
+# -------------------------------------------------
+# Wait for MAVROS services needed by the agent
+# -------------------------------------------------
+wait_for_mavros_ready() {
+    local timeout=60
+    local elapsed=0
+
+    while (( elapsed < timeout )); do
+        if ros2 service list 2>/dev/null | grep -qx '/mavros/param/set_parameters' &&
+           ros2 service list 2>/dev/null | grep -qx '/mavros/cmd/arming' &&
+           ros2 service list 2>/dev/null | grep -qx '/mavros/set_mode'; then
+            return 0
+        fi
+        sleep 1
+        ((elapsed++))
+    done
+
+    echo "Timed out waiting for MAVROS services."
+    return 1
+}
+
+echo "Waiting for MAVROS services..."
+wait_for_mavros_ready
+
+# -------------------------------------------------
+# Start application
+# -------------------------------------------------
+./gradlew -q --console=plain &
+APP_PID=$!
+sleep 5
 
 # -------------------------------------------------
 # Generate incremental log names starting at 0
@@ -110,11 +134,11 @@ start_sampler() {
         count=1
         while true; do
             read cpu mem < <(
-                ps -p "$pid_list" -o %cpu=,%mem= 2>/dev/null |
+                ps -p "$pid_list" -o %cpu=,rss= 2>/dev/null |
                 awk '
                     BEGIN{sCPU=0;sMEM=0}
                     NF>=2{sCPU+=$1;sMEM+=$2}
-                    END{printf "%.2f %.2f\n",sCPU,sMEM}'
+                    END{printf "%.2f %.2f\n",sCPU,sMEM/1024}'
             )
 
             cpu="${cpu:-0.00}"
@@ -149,7 +173,7 @@ fi
 # -------------------------------------------------
 # Run benchmark for 90 seconds
 # -------------------------------------------------
-sleep 80
+sleep 30
 
 echo "$(date)"
 echo "Benchmark finished."

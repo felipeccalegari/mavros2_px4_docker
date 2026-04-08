@@ -1,3 +1,4 @@
+/* Takeoff example */
 /* !setmode.
 !arm.
 
@@ -13,6 +14,9 @@
       .wait(1000);
       .print("Armed the drone."). */
 
+/* End of takeoff example*/
+
+/* Mission example */
 /* !start.
 +!start <-
     // 1. Clear 
@@ -46,6 +50,9 @@
     .time(_, M7, S7, MS7);
     .print("Finishing arming at: ", M7, ":", S7, ":", MS7). */
 
+/* End of mission example */
+
+/* Offboard Mode example*/
 
 /* !pub_waypoints.
 +!pub_waypoints : true
@@ -62,6 +69,9 @@
 +!arm : true
    <- .arming(true).  */
 
+/* End of Offboard Mode example */
+
+/* Battery monitoring example. Used alongside the Mission example*/
 /* +battery(percentage(P))
    <- 
       .nano_time(T);
@@ -78,6 +88,12 @@
       
       .wait(5000). */
 
+/* End of Battery monitoring example */
+
+/* Reposition counter example
+Agent sends initial takeoff to Z = 1.0m, then percepts position updates and if the Z value is within
+0.35m of the target, it sends a new coordinate incrementing Z value in 1 unit until it reaches Z = 10m.
+ */
 /* !start.
 
 +!start <-
@@ -107,6 +123,8 @@
         };
     };
     -step_transitioning(_). */
+/* End of Reposition counter example */
+
 
 /* MAVROS parameter counter.
 
@@ -124,7 +142,7 @@ the last published value through /mavros/param/event.
     +awaiting_readback(true);
     .print("Starting MAVROS parameter counter at 1.");
     .wait(500);
-    .param_set(false, "MPC_Z_VEL_MAX_UP", [3,false,0,1.0]).
+    .param_set("MPC_Z_VEL_MAX_UP", 1.0).
 
 +param_event(param_id("MPC_Z_VEL_MAX_UP"),
              value(type(_),
@@ -151,7 +169,7 @@ the last published value through /mavros/param/event.
         -expected_param_value(_);
         +expected_param_value(NextValue);
         +awaiting_readback(true);
-        .param_set(false, "MPC_Z_VEL_MAX_UP", [3,false,0,NextValue]);
+        .param_set("MPC_Z_VEL_MAX_UP", NextValue);
         .wait(120)
       } else {
         .print("MAVROS parameter counter finished at value ", DoubleValue, ".");
@@ -160,3 +178,4 @@ the last published value through /mavros/param/event.
       }
     }.
 
+/* End of MAVROS parameter counter. */

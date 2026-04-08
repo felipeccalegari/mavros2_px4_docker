@@ -142,7 +142,7 @@ the last published value through /mavros/param/event.
     +awaiting_readback(true);
     .print("Starting MAVROS parameter counter at 1.");
     .wait(500);
-    .param_set(false, "MPC_Z_VEL_MAX_UP", [3,false,0,1.0]).
+    .param_set("MPC_Z_VEL_MAX_UP", 1.0).
 
 +param_event(param_id("MPC_Z_VEL_MAX_UP"),
              value(type(_),
@@ -169,7 +169,7 @@ the last published value through /mavros/param/event.
         -expected_param_value(_);
         +expected_param_value(NextValue);
         +awaiting_readback(true);
-        .param_set(false, "MPC_Z_VEL_MAX_UP", [3,false,0,NextValue]);
+        .param_set("MPC_Z_VEL_MAX_UP", NextValue);
         .wait(120)
       } else {
         .print("MAVROS parameter counter finished at value ", DoubleValue, ".");
@@ -179,4 +179,3 @@ the last published value through /mavros/param/event.
     }.
 
 /* End of MAVROS parameter counter. */
-

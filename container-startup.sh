@@ -38,9 +38,34 @@ echo '  [1/4] rosbridge - Port 9090'
 ros2 launch rosbridge_server rosbridge_websocket_launch.xml &
 sleep 3
 
-echo '  [2/4] MAVROS - Waiting for PX4 connection'
-ros2 launch mavros px4.launch fcu_url:=udp://:14540@127.0.0.1:14540 &
-sleep 3
+echo '  [2/4] MAVROS watcher - Will launch after PX4 starts'
+(
+  while true; do
+    until pgrep -x px4 >/dev/null 2>&1; do
+      sleep 2
+    done
+
+    echo '[mavros] PX4 detected, starting MAVROS...'
+    ros2 launch mavros px4.launch fcu_url:=udp://:14540@127.0.0.1:14540 &
+    MAVROS_PID=$!
+
+    while kill -0 "$MAVROS_PID" 2>/dev/null && pgrep -x px4 >/dev/null 2>&1; do
+      sleep 2
+    done
+
+    if kill -0 "$MAVROS_PID" 2>/dev/null; then
+      echo '[mavros] PX4 stopped, stopping MAVROS...'
+      kill "$MAVROS_PID" 2>/dev/null || true
+      wait "$MAVROS_PID" 2>/dev/null || true
+    else
+      wait "$MAVROS_PID" 2>/dev/null || true
+      echo '[mavros] MAVROS exited, waiting for PX4 before retrying...'
+    fi
+
+    sleep 2
+  done
+) &
+sleep 1
 
 echo '  [3/4] socat bridge - /dev/ttyV1 <-> udp://127.0.0.1:14560'
 (
@@ -62,6 +87,8 @@ echo 'Ready! To start PX4 simulation, run:'
 echo '  docker exec -it px4_ros2 bash'
 echo '  cd /opt/PX4-Autopilot'
 echo '  make px4_sitl gz_x500'
+echo
+echo 'MAVROS will start automatically after the px4 process is detected.'
 echo
 echo 'Safety checks are DISABLED for development.'
 echo '============================================'

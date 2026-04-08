@@ -101,22 +101,27 @@ public class CustomClass extends RosMaster{
     }
 
     if (actionName.equals("param_set")) {
-        if (args == null || args.length < 3) return false;
+        if (args == null || args.length < 2) return false;
 
-        String paramId = args[1].toString().replaceAll("^\"|\"$", "");
+        String paramId = args[0].toString().replaceAll("^\"|\"$", "");
 
-        ListTermImpl value;
-        if (args[2] instanceof ListTermImpl) {
-            value = (ListTermImpl) args[2];
+        int type = 3;
+        boolean boolValue = false;
+        long integerValue = 0;
+        double doubleValue;
+
+        if (args.length >= 3 && args[2] instanceof ListTermImpl) {
+            ListTermImpl value = (ListTermImpl) args[2];
+            if (value.size() < 4) return false;
+
+            type = Integer.parseInt(value.get(0).toString());
+            boolValue = Boolean.parseBoolean(value.get(1).toString());
+            integerValue = Long.parseLong(value.get(2).toString());
+            double doubleValueParsed = Double.parseDouble(value.get(3).toString());
+            doubleValue = doubleValueParsed;
         } else {
-            return false;
+            doubleValue = Double.parseDouble(args[1].toString());
         }
-        if (value.size() < 4) return false;
-
-        int type = Integer.parseInt(value.get(0).toString());
-        boolean boolValue = Boolean.parseBoolean(value.get(1).toString());
-        long integerValue = Long.parseLong(value.get(2).toString());
-        double doubleValue = Double.parseDouble(value.get(3).toString());
 
         String jsonString =
             "{"
