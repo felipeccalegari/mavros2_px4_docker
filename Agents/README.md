@@ -27,10 +27,10 @@ In the agent .asl file (`Agents/Mavros/src/agt/sample_agent.asl`), we have the a
 
 - **Takeoff** - basic arm/takeoff to default height.
 - **Mission Mode** - uses "AUTO.MISSION" mode from PX4 where the UAV would fly to the specific coordinates (Lat and Lon in degrees, Alt in meters).
-- **Offboard Mode** - uses "OFFBOARD" mode from PX4 where user can fly to a specific coordinate (X,Y,Z) with that mode but the user must follow standard procedures for that (data must be sent with the minimum of 2Hz, for example).
 - **Battery monitoring** (used alongside Mission Mode) - agent percepts the battery information from PX4 and acts depending on it's percentage left.
 - **Reposition** "counter" - when not in mission, Mavlink/Mavros uses REPOSITION mode for the UAV flies to specific coordinates. This example works as a counter: agent sends first coordinate (with altitude Z=1), then it'll perceive the UAV current coordinates and if the drone reaches that altitude Z (or if it's within a 0.35m range), it'll add that Z parameter in 1 unit and send this new coordinate as action and so on, until the UAV reaches Z=10.
 - **Set parameter** "counter" - this example also works as a counter but its purpose is to compare with Mavlink to measure which mechanism is faster. It sends an initial velocity of 1 to the "MPC_Z_VEL_MAX_UP" parameter (in short words, a parameter that determines maximum vertical velocity) and then a plan will perceive this information and once the agent percepts that the parameter is at the desired value, it'll react and increase in 1 unit this parameter, and so on until it reaches 100. Since the goal is to test latencies only, this example *alone* doesn't have *physical* impact in the simulation since the vehicle is on the ground, not moving.
+- **Offboard Mode** - uses "OFFBOARD" mode from PX4 where user can fly to a specific coordinate (X,Y,Z) with that mode but the user must follow standard procedures for that (data must be sent with the minimum of 2Hz, for example). Originally, the command for this requires other parameters as well but they been covered under the .java classes, so the user only need to worry about the respective "Forward, Right, Up" coordinates. Also, these coordinates are the relative position given the drone's current location, not relative to where the drone took off from. For example, if, after the drone took off, the user desires to send the UAV to 2m forward, then simply send (2, 0, 0), and then afterwards go 3 units left simply send (0, -3, 0).
 
 ## Mavlink Agents
 Mavlink is a lightweight messaging protocol for communicating with drones. The messages are defined in a standard .xml file (autopilots usually follow the official [common.xml](https://mavlink.io/en/messages/common.html)).
@@ -61,6 +61,8 @@ In the agent .asl file (`Agents/Mavlink/examples/jacamo/serial_device/perception
 
 - **Parameter counter**: this example also works as a counter but its purpose is to compare with Mavros to measure which mechanism is faster. It sends an initial velocity of 1 to the "MPC_Z_VEL_MAX_UP" parameter (in short words, a parameter that determines maximum vertical velocity) and then a plan will perceive this information and once the agent percepts that the parameter is at the desired value, it'll react and increase in 1 unit this parameter, and so on until it reaches 100. Since the goal is to test latencies only, this example *alone* doesn't have *physical* impact in the simulation since the vehicle is on the ground, not moving.
 
+- **Offboard Mode** - uses "OFFBOARD" mode from PX4 where user can fly to a specific coordinate (X,Y,Z) with that mode but the user must follow standard procedures for that (data must be sent with the minimum of 2Hz, for example). Originally, the command for this requires other parameters as well but they been covered under the .java classes, so the user only need to worry about the respective "Forward, Right, Up" coordinates. Also, these coordinates are the relative position given the drone's current location, not relative to where the drone took off from. For example, if, after the drone took off, the user desires to send the UAV to 2m forward, then simply send (2, 0, 0), and then afterwards go 3 units left simply send (0, -3, 0).
+
 #### Perceptions Examples:
 
 On this Mavlink extension, the data telemetry coming from the flight controller (PX4, for example) are the agent's perceptions of the environment. The perception name is derived from the Mavlink mesage type by removing `_` symbol, joining words and then converting the result to lowercase. To illustrate, the table below compares the telemetry and how it is used in Jason code:
@@ -82,10 +84,12 @@ To avoid high-rate telemetry data being spammed in Jason's belief system and mes
 
 - **Attitude**: vehicle orientation.
 
-- **System Status**: status about the system - it was used to try to perceive information about the battery's remaining percentage, however it seems that PX4 isn't transmitting at a proper rate or it isnt transmitting at all so no information regarding that is showed. Code will be updated once we figure out how to deal with that specific data.
+- **System Status**: status about the system.
 
 - **Status Text**: Text regarding system status and its severity.
 
 - **Global Position INT**: GPS information in Lat, Lon, Alt, RelAlt format (Lat and Lon are in degrees x 1e7, Alt and RelAlt are in millimeters).
 
+- **Battery**: information about battery percentage, voltage and current.
+    - Note: the battery perception has been customized in the Mavlink class to "force" PX4 to send the battery information via telemetry since not always the flight controller transmits that information by default.
 

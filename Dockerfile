@@ -4,8 +4,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PX4_TAG=${PX4_TAG}
 SHELL ["/bin/bash", "-lc"]
 
+ARG APT_FLAGS="-o Acquire::Retries=5 --fix-missing"
+
 # --- Base setup ---
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get ${APT_FLAGS} update && apt-get ${APT_FLAGS} install -y --no-install-recommends \
     locales curl ca-certificates gnupg lsb-release \
  && locale-gen en_US.UTF-8 \
  && rm -rf /var/lib/apt/lists/*
@@ -20,19 +22,25 @@ RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
   > /etc/apt/sources.list.d/ros2.list
 
 # --- Core packages ---
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get ${APT_FLAGS} update && apt-get ${APT_FLAGS} install -y --no-install-recommends \
     git sudo wget nano vim tmux socat jq lsof iproute2 netcat-openbsd tcpdump \
-    openjdk-21-jdk-headless \
-    ros-humble-desktop \
-    ros-humble-mavros ros-humble-mavros-extras \
-    ros-humble-rosbridge-server ros-humble-rosbridge-suite \
-    ros-humble-rqt-console ros-humble-rviz2 \
     python3 python3-pip python3-colcon-common-extensions \
     python3-jinja2 python3-empy python3-toml python3-numpy \
-    gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl \
     libfuse2 \
     libxcb-xinerama0 libxkbcommon-x11-0 libxcb-cursor-dev \
     mesa-utils libgl1-mesa-dri libgl1-mesa-glx x11-apps \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get ${APT_FLAGS} update && apt-get ${APT_FLAGS} install -y --no-install-recommends \
+    openjdk-21-jdk-headless \
+    gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get ${APT_FLAGS} update && apt-get ${APT_FLAGS} install -y --no-install-recommends \
+    ros-humble-desktop \
+    ros-humble-rqt-console ros-humble-rviz2 \
+    ros-humble-rosbridge-server ros-humble-rosbridge-suite \
+    ros-humble-mavros ros-humble-mavros-extras \
  && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get purge -y modemmanager || true \
@@ -45,7 +53,7 @@ RUN /opt/ros/humble/lib/mavros/install_geographiclib_datasets.sh \
  || echo "WARNING: GeographicLib installation failed"
 
 # --- PX4 dependencies ---
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get ${APT_FLAGS} update && apt-get ${APT_FLAGS} install -y --no-install-recommends \
     build-essential cmake ninja-build \
     pkg-config libxml2-utils \
  && rm -rf /var/lib/apt/lists/*
@@ -96,6 +104,7 @@ RUN chmod +x /usr/local/bin/container-startup.sh
 
 # --- QGroundControl ---
 RUN useradd -m -s /bin/bash qgc \
+ && usermod -aG dialout qgc \
  && mkdir -p /home/qgc \
  && wget -O /home/qgc/QGroundControl.AppImage \
     https://d176tv9ibo4jno.cloudfront.net/latest/QGroundControl-x86_64.AppImage \

@@ -131,7 +131,7 @@ Agent sends initial takeoff to Z = 1.0m, then percepts position updates and if t
 Starts at 1 and only sends the next increment after PX4 confirms
 the last published value through /mavros/param/event.
 */
-!demo_param_counter.
+/* !demo_param_counter.
 
 +!demo_param_counter <-
     -counter_step(_);
@@ -176,6 +176,63 @@ the last published value through /mavros/param/event.
         -counter_step(_);
         -expected_param_value(_)
       }
-    }.
+    }. */
 
 /* End of MAVROS parameter counter. */
+
+/* Body-relative position example. */
+!demo_offboard_body_relative_position.
++!demo_offboard_body_relative_position
+  : not position(pose(position(x(_), y(_), z(_)), orientation(x(_), y(_), z(_), w(_))))
+  <-
+    .print("Waiting for local position...");
+    .wait(500);
+    !demo_offboard_body_relative_position.
+
++!demo_offboard_body_relative_position
+  : position(pose(position(x(_), y(_), z(_)), orientation(x(_), y(_), z(_), w(_))))
+  <-
+    .print("Demo: body-relative position offsets using high-level setpoint_local(Forward, Right, Up).");
+    -offboard_body_relative_stream_enabled;
+    +offboard_body_relative_stream_enabled;
+    -body_relative_target(_,_,_);
+    +body_relative_target(0.0, 0.0, 2.0); // take off 2 m relative to the current pose
+    !!offboard_body_relative_position_stream;
+    .wait(1200);
+    .set_mode("OFFBOARD");
+    .wait(500);
+    .arming(true);
+    .wait(5000);
+    -body_relative_target(_,_,_);
+    +body_relative_target(0.0, -3.0, 0.0); // move 3 m to the drone's current left
+    .wait(5000);
+    -body_relative_target(_,_,_);
+    +body_relative_target(2.0, 0.0, 0.0); // then move 2 m forward from the drone's current heading
+    .wait(5000);
+    -body_relative_target(_,_,_);
+    +body_relative_target(2.0, 2.0, 0.0); // forward-right
+    .wait(5000);
+    -body_relative_target(_,_,_);
+    +body_relative_target(0.0, 3.0, 0.0); // move 3 m to the drone's current right
+    .wait(5000);
+    -body_relative_target(_,_,_);
+    +body_relative_target(-2.0, 0.0, 0.0); // move 2 m backward from the drone's current heading
+    .wait(5000);
+    .set_mode("AUTO.RTL");
+    .wait(500);
+    -offboard_body_relative_stream_enabled;
+    -body_relative_target(_,_,_);
+    .print("Returning to launch and finishing flight.").
+
++!offboard_body_relative_position_stream
+  : body_relative_target(Forward, Right, Up) & offboard_body_relative_stream_enabled
+  <-
+    .setpoint_local(Forward, Right, Up);
+    .wait(100);
+    !offboard_body_relative_position_stream.
+
++!offboard_body_relative_position_stream
+  : not offboard_body_relative_stream_enabled
+  <-
+    true.
+/* End of Body-relative position example. */

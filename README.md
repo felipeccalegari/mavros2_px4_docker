@@ -19,12 +19,31 @@ docker compose build --no-cache
 ```
 *It's normal to take a while to build.*
 
-3) Starting the container:
+3) Choose one GUI mode and start the container:
+
+**Option A** - noVNC in the browser (only recommended if the user cannot use *xhost* due to processing limitations):
 ```
-xhost +local:docker # Running GUI applications
-docker compose up -d
+docker compose -f docker-compose_novnc.yaml up -d
 ```
-This will start the container in the background (detached mode).
+Then open:
+```
+http://localhost:8080/vnc.html
+```
+and click `Connect`.
+
+**Option B** - host X11 via `xhost`:
+```
+xhost +local:docker
+docker compose -f docker-compose_xhost.yaml up -d
+```
+
+If you want to switch from one mode to the other, stop the current stack first:
+```
+docker compose -f docker-compose_novnc.yaml stop
+docker compose -f docker-compose_xhost.yaml stop
+```
+
+Both options start the container in the background (detached mode).
 
 - Execute container commands:
 ```
@@ -69,4 +88,3 @@ cd Agents/Mavlink/examples/jacamo/serial_device/perception_action
 2) `./PX4-Autopilot:/opt/PX4-Autopilot`: allows the user to edit PX4 files if desired (for example if they wish to create custom scenarios).
 
 - Some great tools have also being added into the image such as: QGroundControl (simply running `qgc` command should launch it) for flight control monitoring, RQT Console to debug ROS/Mavros messages (run with `ros2 run rqt_console rqt_console` command), nano and vim for text editor, socat and others.
-

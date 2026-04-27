@@ -4,6 +4,7 @@ import embedded.mas.bridges.ros.DefaultRos4EmbeddedMas;
 
 import jason.asSyntax.Atom;
 import jason.asSyntax.ListTermImpl;
+import jason.asSyntax.NumberTerm;
 import jason.asSyntax.Term;
 import jason.asSemantics.Unifier;
 
@@ -153,7 +154,80 @@ public class CustomClass extends RosMaster{
         }
     }
 
+    if (actionName.equals("setpoint_local")) {
+        try {
+            String jsonString;
+            if (args != null && args.length == 3) {
+                double x = toDouble(args[0]);
+                double y = toDouble(args[1]);
+                double z = toDouble(args[2]);
+                jsonString =
+                    "{"
+                    + "\"header\":{\"stamp\":{\"sec\":0,\"nanosec\":0},\"frame_id\":\"map\"},"
+                    + "\"pose\":{"
+                        + "\"position\":{\"x\":" + x + ",\"y\":" + y + ",\"z\":" + z + "},"
+                        + "\"orientation\":{\"x\":0.0,\"y\":0.0,\"z\":0.0,\"w\":1.0}"
+                    + "}"
+                    + "}";
+            } else if (args != null && args.length == 2) {
+                jsonString = buildFullSetpointLocalJson(args[0], args[1]);
+            } else {
+                return false;
+            }
+
+            ((DefaultRos4EmbeddedMas) this.getMicrocontroller())
+                .rosWrite("/mavros/setpoint_position/local", "geometry_msgs/msg/PoseStamped", jsonString);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
        return true;
+}
+
+private static String buildFullSetpointLocalJson(Object headerObj, Object poseObj) throws Exception {
+    if (!(headerObj instanceof Term) || !(poseObj instanceof Term)) {
+        throw new IllegalArgumentException("setpoint_local full form requires Jason terms");
+    }
+
+    ListTermImpl header = asList((Term) headerObj, "header");
+    ListTermImpl stamp = asList(header.get(0), "stamp");
+    String frameId = stripQuotes(header.get(1).toString());
+
+    ListTermImpl pose = asList((Term) poseObj, "pose");
+    ListTermImpl position = asList(pose.get(0), "position");
+    ListTermImpl orientation = asList(pose.get(1), "orientation");
+
+    return "{"
+        + "\"header\":{\"stamp\":{\"sec\":" + toDouble(stamp.get(0)) + ",\"nanosec\":" + toDouble(stamp.get(1)) + "},\"frame_id\":\"" + frameId + "\"},"
+        + "\"pose\":{"
+            + "\"position\":{\"x\":" + toDouble(position.get(0)) + ",\"y\":" + toDouble(position.get(1)) + ",\"z\":" + toDouble(position.get(2)) + "},"
+            + "\"orientation\":{\"x\":" + toDouble(orientation.get(0)) + ",\"y\":" + toDouble(orientation.get(1)) + ",\"z\":" + toDouble(orientation.get(2)) + ",\"w\":" + toDouble(orientation.get(3)) + "}"
+        + "}"
+        + "}";
+}
+
+private static ListTermImpl asList(Term term, String name) {
+    if (!(term instanceof ListTermImpl)) {
+        throw new IllegalArgumentException("setpoint_local " + name + " must be a list");
+    }
+    return (ListTermImpl) term;
+}
+
+private static double toDouble(Object value) throws Exception {
+    if (value instanceof NumberTerm) {
+        return ((NumberTerm) value).solve();
+    }
+    if (value instanceof Term && value.toString() != null) {
+        return Double.parseDouble(stripQuotes(value.toString()));
+    }
+    return Double.parseDouble(stripQuotes(String.valueOf(value)));
+}
+
+private static String stripQuotes(String value) {
+    return value.replaceAll("^\"|\"$", "");
 }
 
 }

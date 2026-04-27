@@ -117,25 +117,5 @@
           params:
             - wp_seq
 
-    topicWritingActions:
-        - actionName: setpoint_local
-          topicName: /mavros/setpoint_position/local
-          topicType: geometry_msgs/msg/PoseStamped
-          params:
-          - header:
-            #- seq
-            - stamp:
-              - sec
-              - nanosec
-            - frame_id
-          - pose:
-            - position:
-              - x
-              - y
-              - z
-            - orientation:  
-              - x
-              - y
-              - z
-              - w
+    topicWritingActions: []
                               

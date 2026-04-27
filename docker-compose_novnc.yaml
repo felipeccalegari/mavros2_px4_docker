@@ -1,0 +1,52 @@
+services:
+  px4_ros2_allinone:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+      args:
+        PX4_TAG: v1.16.1
+    container_name: px4_ros2
+    restart: unless-stopped
+    depends_on:
+      - novnc
+    shm_size: "2gb"
+    environment:
+      - DISPLAY=novnc:0.0
+      - QT_QPA_PLATFORM=xcb
+      - QT_X11_NO_MITSHM=1
+      - FCU_URL=udp://:14540@127.0.0.1:14540
+      - ROS_DOMAIN_ID=0
+      - PX4_SIM_MODEL=gz_x500
+      - LIBVA_DRIVER_NAME=
+    ports:
+      - "9090:9090"
+      - "14540:14540/udp"
+    volumes:
+      - ./ws:/ws
+      - ./Agents:/root/Agents
+      - ./PX4-Autopilot:/opt/PX4-Autopilot
+    devices:
+      - /dev/dri:/dev/dri
+    networks:
+      - x11
+    working_dir: /opt/PX4-Autopilot
+    command: ["/usr/local/bin/container-startup.sh"]
+
+  novnc:
+    image: theasp/novnc:latest
+    container_name: px4_novnc
+    restart: unless-stopped
+    shm_size: "1gb"
+    environment:
+      - DISPLAY_WIDTH=1280
+      - DISPLAY_HEIGHT=720
+      - RUN_XTERM=no
+      - RUN_FLUXBOX=yes
+    ports:
+      - "8080:8080"
+    networks:
+      - x11
+
+networks:
+  x11:

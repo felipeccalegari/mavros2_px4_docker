@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      network: host
       args:
         PX4_TAG: v1.16.1
     container_name: px4_ros2
