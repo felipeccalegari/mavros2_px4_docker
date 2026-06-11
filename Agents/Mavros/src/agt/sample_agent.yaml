@@ -24,10 +24,6 @@
         beliefName: state
         ignoreValues:
           - header
-          - connected
-          - armed
-          - guided
-          - system_status
 
       - topicName: /mavros/battery
         topicType: sensor_msgs/msg/BatteryState
@@ -59,6 +55,33 @@
         beliefName: position
         ignoreValues:
           - header
+      - topicName: /mavros/imu/data
+        topicType: sensor_msgs/msg/Imu
+        beliefName: imu
+        ignoreValues:
+          - header
+          - orientation_covariance
+          - angular_velocity_covariance
+          - linear_acceleration
+          - linear_acceleration_covariance
+      - topicName: /mavros/statustext/recv
+        topicType: mavros_msgs/msg/StatusText
+        beliefName: statustext
+        ignoreValues:
+          - header
+          - id
+          - chunk_seq
+      - topicName: /mavros/global_position/global
+        topicType: sensor_msgs/msg/NavSatFix
+        beliefName: global_position
+        ignoreValues:
+          - header
+          - status
+          - position_covariance
+          - position_covariance_type
+      - topicName: /mavros/global_position/rel_alt
+        topicType: std_msgs/msg/Float64
+        beliefName: relative_alt
       - topicName: /mavros/target_actuator_control
         topicType: mavros_msgs/msg/ActuatorControl
         beliefName: actuator_target

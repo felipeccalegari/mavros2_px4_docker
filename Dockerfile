@@ -6,7 +6,7 @@ SHELL ["/bin/bash", "-lc"]
 
 ARG APT_FLAGS="-o Acquire::Retries=5 --fix-missing"
 
-# --- Base setup ---
+# Base setup
 RUN apt-get ${APT_FLAGS} update && apt-get ${APT_FLAGS} install -y --no-install-recommends \
     locales curl ca-certificates gnupg lsb-release \
  && locale-gen en_US.UTF-8 \
@@ -14,14 +14,14 @@ RUN apt-get ${APT_FLAGS} update && apt-get ${APT_FLAGS} install -y --no-install-
 
 ENV LANG=en_US.UTF-8
 
-# --- ROS 2 Humble repository ---
+# ROS 2 Humble
 RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
   | gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg \
  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
   http://packages.ros.org/ros2/ubuntu jammy main" \
   > /etc/apt/sources.list.d/ros2.list
 
-# --- Core packages ---
+# Core packages
 RUN apt-get ${APT_FLAGS} update && apt-get ${APT_FLAGS} install -y --no-install-recommends \
     git sudo wget nano vim tmux socat jq lsof iproute2 netcat-openbsd tcpdump \
     python3 python3-pip python3-colcon-common-extensions \
@@ -47,33 +47,32 @@ RUN apt-get purge -y modemmanager || true \
  && apt-get autoremove -y \
  && rm -rf /var/lib/apt/lists/*
 
-# --- MAVROS GeographicLib datasets ---
+# MAVROS GeographicLib datasets
 RUN /opt/ros/humble/lib/mavros/install_geographiclib_datasets.sh \
  && echo "GeographicLib datasets installed" \
  || echo "WARNING: GeographicLib installation failed"
 
-# --- PX4 dependencies ---
+# PX4 dependencies
 RUN apt-get ${APT_FLAGS} update && apt-get ${APT_FLAGS} install -y --no-install-recommends \
     build-essential cmake ninja-build \
     pkg-config libxml2-utils \
  && rm -rf /var/lib/apt/lists/*
 
-# --- Clone PX4-Autopilot seed ---
+# Clone PX4-Autopilot
 RUN git clone https://github.com/PX4/PX4-Autopilot.git /opt/PX4-Autopilot-seed \
  && cd /opt/PX4-Autopilot-seed \
  && git checkout ${PX4_TAG} \
  && git submodule update --init --recursive
 
-# --- PX4 setup ---
+# PX4 setup
 RUN cd /opt/PX4-Autopilot-seed \
  && bash ./Tools/setup/ubuntu.sh --no-nuttx \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# --- DISABLE PX4 SAFETY CHECKS (Persistent) ---
-# Create custom rcS startup file that disables all safety checks
+# --- Disable PX4 safety checks
+# Custom rcS startup file that disables safety checks
 RUN cat > /opt/PX4-Autopilot-seed/ROMFS/px4fmu_common/init.d-posix/rcS.append << 'EOF'
-# Disable safety checks for development
 param set COM_ARM_WO_GPS 1
 param set CBRK_IO_SAFETY 22027
 param set NAV_RCL_ACT 0
@@ -84,7 +83,7 @@ param set CBRK_USB_CHK 197848
 param set EKF2_REQ_EPH 1000
 param set EKF2_REQ_EPV 1000
 
-# Extra onboard MAVLink endpoint for the /dev/ttyV1 socat bridge
+# Onboard MAVLink endpoint for the /dev/ttyV1 socat bridge
 mavlink start -u 14560 -o 14561 -t 127.0.0.1 -m onboard -r 40000
 EOF
 
@@ -94,7 +93,7 @@ RUN cd /opt/PX4-Autopilot-seed && \
     echo "# Load custom safety bypass settings" >> ROMFS/px4fmu_common/init.d-posix/rcS && \
     cat ROMFS/px4fmu_common/init.d-posix/rcS.append >> ROMFS/px4fmu_common/init.d-posix/rcS
 
-# --- Setup bashrc ---
+# Setup bashrc
 RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc
 
 RUN mkdir -p /opt/PX4-Autopilot /root/Agents
@@ -102,7 +101,7 @@ RUN mkdir -p /opt/PX4-Autopilot /root/Agents
 COPY container-startup.sh /usr/local/bin/container-startup.sh
 RUN chmod +x /usr/local/bin/container-startup.sh
 
-# --- QGroundControl ---
+# QGroundControl
 RUN useradd -m -s /bin/bash qgc \
  && usermod -aG dialout qgc \
  && mkdir -p /home/qgc \
@@ -133,5 +132,5 @@ exec runuser -u qgc -- env \
 EOF
 RUN chmod +x /usr/local/bin/qgc
 
-# --- Set working directory ---
+# Working directory
 WORKDIR /opt/PX4-Autopilot

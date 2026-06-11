@@ -1,0 +1,23 @@
+plugins {
+    id 'application'
+}
+
+group = 'examples.mavlink'
+version = '1.0'
+
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+
+application {
+    mainClass = 'examples.mavlink.MavlinkParamCounter'
+}
+
+dependencies {
+    implementation 'io.dronefleet.mavlink:mavlink:1.1.11'
+    implementation 'com.fazecast:jSerialComm:2.11.0'
+    runtimeOnly 'org.slf4j:slf4j-simple:1.7.36'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

@@ -90,6 +90,109 @@
 
 /* End of Battery monitoring example */
 
+/* Common MAVROS perception examples. */
+
+// Used nanoseconds to avoid perceptions spamming in the terminal and affect simulation behavior.
+state_gap_ns(5000000000).
+pos_gap_ns(7000000000).
+imu_gap_ns(7000000000).
+gps_gap_ns(7000000000).
+text_gap_ns(3000000000).
+
+last_state_ns(0).
+last_pos_ns(0).
+last_imu_ns(0).
+last_gps_ns(0).
+last_text_ns(0).
+
+/* MAVROS STATE/SYSTEM_STATUS perception example.
+MAVROS exposes PX4 state and system status through /mavros/state.
+*/
++state(connected(Connected),
+       armed(Armed),
+       guided(Guided),
+       manual_input(ManualInput),
+       mode(Mode),
+       system_status(SystemStatus))
+  : last_state_ns(Last) & state_gap_ns(Gap)
+  <-
+    .nano_time(Now);
+    if (Now - Last >= Gap) {
+      -last_state_ns(_);
+      +last_state_ns(Now);
+      .print("State: connected=", Connected, ", armed=", Armed, ", guided=", Guided,
+             ", manual_input=", ManualInput, ", mode=", Mode, ", system_status=", SystemStatus)
+    }.
+/* End of MAVROS STATE/SYSTEM_STATUS perception example. */
+
+/* MAVROS LOCAL_POSITION/POSE perception example. */
+/* +position(pose(position(x(X), y(Y), z(Z)),
+                 orientation(x(Qx), y(Qy), z(Qz), w(Qw))))
+  : last_pos_ns(Last) & pos_gap_ns(Gap)
+  <-
+    .nano_time(Now);
+    if (Now - Last >= Gap) {
+      -last_pos_ns(_);
+      +last_pos_ns(Now);
+      .print("Local position: x=", X, ", y=", Y, ", z=", Z,
+             ", qx=", Qx, ", qy=", Qy, ", qz=", Qz, ", qw=", Qw)
+    }. */
+/* End of MAVROS LOCAL_POSITION/POSE perception example. */
+
+/* MAVROS IMU perception example.
+MAVROS exposes attitude as an orientation quaternion in /mavros/imu/data.
+*/
+/* +imu(orientation(x(Qx), y(Qy), z(Qz), w(Qw)),
+       angular_velocity(x(RollRate), y(PitchRate), z(YawRate)))
+  : last_imu_ns(Last) & imu_gap_ns(Gap)
+  <-
+    .nano_time(Now);
+    if (Now - Last >= Gap) {
+      -last_imu_ns(_);
+      +last_imu_ns(Now);
+      .print("IMU: qx=", Qx, ", qy=", Qy, ", qz=", Qz, ", qw=", Qw,
+             ", roll_rate=", RollRate, ", pitch_rate=", PitchRate, ", yaw_rate=", YawRate)
+    }. */
+/* End of MAVROS IMU perception example. */
+
+/* MAVROS battery/system status perception example. */
+/* +battery(percentage(P))
+  <-
+    if (P >= 0 & P < 0.55) {
+      .print("Battery getting low: ", P)
+    }. */
+/* End of MAVROS battery/system status perception example. */
+
+/* MAVROS STATUSTEXT perception example. */
++statustext(severity(Severity), text(Text))
+  : last_text_ns(Last) & text_gap_ns(Gap)
+  <-
+    .nano_time(Now);
+    if (Now - Last >= Gap) {
+      -last_text_ns(_);
+      +last_text_ns(Now);
+      .print("PX4 status [", Severity, "]: ", Text)
+    }.
+/* End of MAVROS STATUSTEXT perception example. */
+
+/* MAVROS GLOBAL_POSITION perception example.
+MAVROS publishes relative altitude in a separate topic, so the relative_alt perception is shown below.
+*/
+/* +global_position(latitude(Lat), longitude(Lon), altitude(Alt))
+  : last_gps_ns(Last) & gps_gap_ns(Gap)
+  <-
+    .nano_time(Now);
+    if (Now - Last >= Gap) {
+      -last_gps_ns(_);
+      +last_gps_ns(Now);
+      .print("[GPS] lat=", Lat, " lon=", Lon, " alt=", Alt)
+    }.
+
++relative_alt(RelAlt)
+  <-
+    .print("[GPS] relative altitude=", RelAlt). */
+/* End of MAVROS GLOBAL_POSITION perception example. */
+
 /* Reposition counter example
 Agent sends initial takeoff to Z = 1.0m, then percepts position updates and if the Z value is within
 0.35m of the target, it sends a new coordinate incrementing Z value in 1 unit until it reaches Z = 10m.
@@ -134,12 +237,8 @@ the last published value through /mavros/param/event.
 /* !demo_param_counter.
 
 +!demo_param_counter <-
-    -counter_step(_);
     -expected_param_value(_);
-    -awaiting_readback(_);
-    +counter_step(0);
     +expected_param_value(1.0);
-    +awaiting_readback(true);
     .print("Starting MAVROS parameter counter at 1.");
     .wait(500);
     .param_set("MPC_Z_VEL_MAX_UP", 1.0).
@@ -155,25 +254,20 @@ the last published value through /mavros/param/event.
                    integer_array_value(_),
                    double_array_value(_),
                    string_array_value(_)))
-  : expected_param_value(Expected) & counter_step(Step) & awaiting_readback(true)
+  : expected_param_value(Expected)
   <-
     if (DoubleValue == Expected) {
-      -awaiting_readback(_);
       .nano_time(Timestamp);
-      .print(Timestamp, ";", Step, ";", DoubleValue);
-      if (Step < 100) {
-        NextStep = Step + 1;
+      .print(Timestamp, ";", DoubleValue);
+
+      if (Expected < 100.0) {
         NextValue = Expected + 1.0;
-        -counter_step(_);
-        +counter_step(NextStep);
         -expected_param_value(_);
         +expected_param_value(NextValue);
-        +awaiting_readback(true);
         .param_set("MPC_Z_VEL_MAX_UP", NextValue);
         .wait(120)
       } else {
         .print("MAVROS parameter counter finished at value ", DoubleValue, ".");
-        -counter_step(_);
         -expected_param_value(_)
       }
     }. */
@@ -181,7 +275,7 @@ the last published value through /mavros/param/event.
 /* End of MAVROS parameter counter. */
 
 /* "High-level" Offboard example for PX4. */
-!demo_offboard_body_relative_position.
+/* !demo_offboard_body_relative_position.
 +!demo_offboard_body_relative_position
   : not position(pose(position(x(_), y(_), z(_)), orientation(x(_), y(_), z(_), w(_))))
   <-
@@ -234,5 +328,5 @@ the last published value through /mavros/param/event.
 +!offboard_body_relative_position_stream
   : not offboard_body_relative_stream_enabled
   <-
-    true.
+    true. */
 /* End of "High-level" Offboard example for PX4. */

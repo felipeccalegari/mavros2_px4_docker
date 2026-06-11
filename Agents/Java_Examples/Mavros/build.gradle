@@ -1,0 +1,21 @@
+plugins {
+    id 'application'
+}
+
+group = 'examples.mavros'
+version = '1.0'
+
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+
+application {
+    mainClass = 'examples.mavros.MavrosParamCounter'
+}
+
+dependencies {
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

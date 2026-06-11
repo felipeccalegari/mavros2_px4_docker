@@ -83,7 +83,7 @@ mapfile -t MAVROS_PID_ARRAY < <(
 # -------------------------------------------------
 mapfile -t ROS_PID_ARRAY < <(
     ps -eo pid=,args= | awk -v jas="$PID_JAS" '
-        ($0 ~ /roscore|rosmaster|rosout|roslaunch|ros2|\/ros\//) &&
+        ($0 ~ /roscore|rosmaster|rosout|roslaunch|ros2|\/ros\/|rosbridge/) &&
         ($0 !~ /mavros/) &&
         ($0 !~ /awk/) &&
         ($0 !~ /grep/) &&
